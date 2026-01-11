@@ -25,19 +25,17 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Read Flutter version from FVM
+      - name: Read Flutter version from FVM (.fvmrc)
         id: fvm
-        run: |
-          if [ -f mobile/.fvmrc ]; then
-            echo "FLUTTER_VERSION=$(cat mobile/.fvmrc | tr -d '\r\n')" >> $GITHUB_ENV
-          else
-            echo "FLUTTER_VERSION=stable" >> $GITHUB_ENV
-          fi
+        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        with:
+          path: mobile/.fvmrc
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm.outputs.FLUTTER_CHANNEL }}
+          flutter-version: ${{ steps.fvm.outputs.FLUTTER_VERSION }}
           cache: true
 
       - name: Install i18n deps
