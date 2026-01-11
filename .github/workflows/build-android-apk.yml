@@ -1,54 +1,60 @@
-name: Build Android APK (debug)
+name: Build Android APK (Immich mobile)
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  apk:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Setup Java
+      - name: Setup Java (Android build)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
+      - name: Setup Node (i18n)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Android SDK on GitHub runners is usually present, but this makes it reliable.
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Read Flutter version from FVM
+        id: fvm
+        run: |
+          if [ -f mobile/.fvmrc ]; then
+            echo "FLUTTER_VERSION=$(cat mobile/.fvmrc | tr -d '\r\n')" >> $GITHUB_ENV
+          else
+            echo "FLUTTER_VERSION=stable" >> $GITHUB_ENV
+          fi
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
 
-      - name: i18n deps
+      - name: Install i18n deps
         run: |
           cd i18n
           npm install
 
-      - name: Generate translations
+      - name: Generate translations + build APK (debug)
         run: |
           cd mobile
           flutter pub get
           npm --prefix ../i18n run format:fix
           dart run easy_localization:generate -S ../i18n
           dart run bin/generate_keys.dart
-
-      - name: Build debug APK
-        run: |
-          cd mobile
           flutter build apk --debug
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: immich-android-debug-apk
