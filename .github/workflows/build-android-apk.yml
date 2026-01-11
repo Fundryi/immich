@@ -9,17 +9,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@v10
-        with:
-          remove-dotnet: true
-          remove-haskell: true
-          remove-codeql: true
-          remove-android: false
-          
-      - name: Show disk space
-        run: df -h
 
       - name: Setup Java (Android build)
         uses: actions/setup-java@v4
